@@ -1,12 +1,21 @@
 #!/bin/bash
 
 #
-# Author Tobias Materzok https://github.com/TobiasMaterzok/
+# Author: Tobias Materzok https://github.com/TobiasMaterzok/
 #
 # A small bash script that combines useful functions for daily usage on a HPC Cluster
 #
 
 tools=~/tools_ua_gecko
+
+function load_gromacs_2018.4(){
+    module purge && module load intel/env/2018 fftw/intel/single/sse/3.3.8 gromacs/nompi/cpu/intel/single/2018.4
+}
+
+function load_gromacs_2021.1(){
+    module purge && module load gcc/10.3.0 fftw/gcc/single/sse/3.3.9 gromacs/nompi/cpu/gcc/single/2021.1
+}
+
 
 # This function creates a template file for the Batch partition with specified parameters.
 # Usage: batch_template <filename> <num_cpus> <string1> <string2>
