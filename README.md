@@ -63,6 +63,7 @@ To use AIDPET, ensure the following dependencies are met:
    - enlarge_slow.mdp
    - enlarge.mdp
 
+ - GROMACS 2018.4 and 2021.1 are assumed to be present. 2021.1 is only used to speed-up some relaxation steps
 
 ### Cloning the Repository and Setting Up
 
