@@ -19,7 +19,8 @@
 # Usage: ./create_IDP_elastomer.sh
 #
 # Dependencies:
-# - directory ~/tools_ua_gecko present and populated with:
+# - GROMACS 2018.4 and 2021.1 installed and available in the environment
+# - Directory ~/tools_ua_gecko present and populated with:
 # - - functions.sh
 # - - run_generators_and_concatenate_pdbs.sh
 # - - select_interactive_pdb2gmx_lightH.sh
@@ -36,20 +37,22 @@
 # - - minim_w_insert.mdp
 # - - enlarge_slow.mdp
 # - - enlarge.mdp
-#
+# - If 'slurm_present' is set to 'true', access to a Linux HPC cluster with SLURM installed and 
+# configured is needed. If 'false', the script will directly run the simulation batch scripts with './job.sh'
 # Input: PDB structure of the protein, box size and density specified in the script; 
 #
 
+# Adjust the 'corenum' variable and the '--cpus-per-task' parameter according to the resources available on the HPC cluster
+corenum=48
+MDRUN="gmx mdrun -ntomp 48 -ntmpi 1"
+
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=48
+#SBATCH --cpus-per-task=$corenum
 #SBATCH --output=out.%j
 #SBATCH --error=err.%j
 #SBATCH --time=4-00:00:00
 #SBATCH --partition=batch
-
-corenum=48
-MDRUN="gmx mdrun -ntomp 48 -ntmpi 1"
 
 tools=~/tools_ua_gecko
 source ~/tools_ua_gecko/functions.sh
@@ -57,6 +60,9 @@ source ~/tools_ua_gecko/functions.sh
 load_gromacs_2018.4
 
 use_run_generators=true
+# slurm_present: Set this variable to 'true' if on an HPC cluster with SLURM. 
+# If 'false', the script will directly run the simulation batch scripts with './job.sh' instead of using 'sbatch job.sh'.
+slurm_present=true
 
 parentdir=$(pwd)
 for L in lseq_test_70_70_70_dens12_sample_1
@@ -120,8 +126,13 @@ do
 	echo "done" >> $currname
 	echo "gmx grompp -f minim.mdp -c GA9rnd_gromos_em_first -p GA9rnd_top_gromos.top -o GA9rnd_gromos_em.tpr -maxwarn 1" >> $currname
 	echo "\$MDRUN -v -deffnm GA9rnd_gromos_em" >> $currname
-	chmod +x $currname
-	sbatch -J "$jobname"_"$runnum" "$currname"
+	
+	if [[ "$slurm_present" == "true" ]]; then 
+		sbatch -J "$jobname"_"$runnum" "$currname"
+	else
+		chmod +x $currname
+		./"$currname"
+	fi
 
 	# Step 2: Temperature Equilibration (Hot)
 	# The hot temperature equilibration is performed to quickly relax any unrealistic frustrations on the picosecond timescale,
@@ -155,8 +166,12 @@ do
 		echo "done" >> $currname
 		echo "X=\$(cat ../IDs_FOR_CANCELING_IF_ERROR)" >> $currname
 		echo "if [ -f GA9rnd_gromos_hot.gro ]; then echo YO; else scancel \"\$X\"; echo \"FAILED at Energy minimization\" >> ../ERROR; fi" >> $currname
-		chmod +x $currname
-		sbatch -J "$jobname"_"$runnum" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev") "$currname"
+		if [[ "$slurm_present" == "true" ]]; then 
+			sbatch -J "$jobname"_"$runnum" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev") "$currname"
+		else
+			chmod +x $currname
+			./"$currname"
+		fi
 	cd $simpath
 
 	# Step 3: Cooldown from 1300K to 300K
@@ -221,8 +236,13 @@ do
 			echo "gmx grompp -f mdp_nvt_cooldown_"$i".mdp -c ../../run_nvt_cooldown_confout_NPT.gro -p ../../GA9rnd_top_gromos.top -o run_nvt_cooldown_"$i"_NPT.tpr -maxwarn 1" >> $currname
 			echo "\$MDRUN -deffnm run_nvt_cooldown_"$i"_NPT -v" >> $currname
 			echo "cp run_nvt_cooldown_"$i"_NPT.gro ../../run_nvt_cooldown_confout_NPT.gro" >> $currname
-			chmod +x $currname
-			sbatch -J "$jobname"_"$runnum" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev") "$currname"
+			
+			if [[ "$slurm_present" == "true" ]]; then 
+				sbatch -J "$jobname"_"$runnum" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev") "$currname"
+			else
+				chmod +x $currname
+				./"$currname"
+			fi
 		cd ..
 		done
 	cd $simpath
@@ -252,8 +272,14 @@ do
 		echo "gmx grompp -f relax_angles.mdp -c ../run_nvt_cooldown_confout_NPT.gro -p ../GA9rnd_top_gromos.top -o GA9rnd_gromos_relaxangles_2_NPT.tpr -maxwarn 1" >> $currname
 		echo "\$MDRUN -v -deffnm GA9rnd_gromos_relaxangles_2_NPT" >> $currname
 		echo "cp GA9rnd_gromos_relaxangles_2_NPT.gro ../" >> $currname
-		chmod +x $currname
-		sbatch -J "$jobname"_"$runnum" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev") "$currname"
+		
+		if [[ "$slurm_present" == "true" ]]; then 
+			sbatch -J "$jobname"_"$runnum" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev") "$currname"
+		else
+			chmod +x $currname
+			./"$currname"
+		fi
+		
 	cd $simpath
 	atomid=$(tail -3 Chainreference.pdb | head -1 | awk '{print $2}')
 	atomtype=$(tail -3 Chainreference.pdb | head -1 | awk '{print $3}')
@@ -305,10 +331,14 @@ do
 		echo "echo \" \" >> ssbond/index.ndx" >> $currname
 		
 		echo "else scancel \"\$X\"; echo \"FAILED before ssbond creation\" >> ERROR; fi" >> $currname
-		chmod +x $currname
-	
-		sbatch -J "$jobname"_"$runnum"_"$sdens" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runbeforess") "$currname" 
-	
+
+		if [[ "$slurm_present" == "true" ]]; then 
+			sbatch -J "$jobname"_"$runnum"_"$sdens" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runbeforess") "$currname" 
+		else
+			chmod +x $currname
+			./"$currname"
+		fi
+		
 		# Step 6: NPT Relaxation of Crosslinked Amorphous Protein Material
 		# The purpose of this step is to quickly relax the crosslinked amorphous protein material under NPT conditions, allowing for
 		# the protein structure. This step is performed after disulfide bond formation to ensure that the newly created bonds are 
@@ -353,8 +383,14 @@ do
 			echo "\$MDRUN -v -deffnm GA9rnd_gromos_ss_em" >> $currname
 			echo "gmx grompp -f npt_relax_after_ss.mdp -c GA9rnd_gromos_ss_em.gro -p ../GA9rnd_gromos_ss_NPT.top -o GA9rnd_npt_relax.tpr -maxwarn 1" >> $currname
 			echo "\$MDRUN -v -deffnm GA9rnd_npt_relax" >> $currname
-			chmod +x $currname
-			sbatch -J "$jobname"_"$runnum"_"$sdens" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev"_"$sdens") "$currname"
+			
+			if [[ "$slurm_present" == "true" ]]; then 
+				sbatch -J "$jobname"_"$runnum"_"$sdens" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev"_"$sdens") "$currname"
+			else
+				chmod +x $currname
+				./"$currname"
+			fi
+			
 		cd $simpath/ss_"$sdens"
 	
 	
@@ -412,8 +448,13 @@ do
 			arg2=$(python -c "print($nstxoutcompressed//$nstcalcenergy)")
 			echo "~/tools_ua_gecko/get_frame_average_volume.sh GA9rnd_npt_relax_strong_w_"$wt" $arg2" >> $currname
 			
-			chmod +x $currname
-			sbatch -J "$jobname"_"$runnum"_"$sdens" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev_waterrelax"_"$sdens") "$currname"
+			if [[ "$slurm_present" == "true" ]]; then 
+				sbatch -J "$jobname"_"$runnum"_"$sdens" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev_waterrelax"_"$sdens") "$currname"
+			else
+				chmod +x $currname
+				./"$currname"
+			fi
+			
 			cd $simpath/ss_"$sdens"/npt_relax_water_NPT
 			
 			runprev=$runprev_waterrun
@@ -465,8 +506,14 @@ do
 						echo "cp ../../npt_relax_w_"$wt"/GA9rnd_gromos_ss_w_"$wt"_NPT.top ." >> $currname
 						echo "gmx grompp -f ../enlarge_slow.mdp -c confout_avgvol.gro -p GA9rnd_gromos_ss_w_"$wt"_NPT.top -o run_strain.tpr -maxwarn 1" >> $currname
 						echo "\$MDRUN -v -deffnm run_strain" >> $currname
-						chmod +x $currname
-						sbatch -J "$jobname"_"$runnum"_"$sdens" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev"_"$sdens") "$currname"
+						
+						if [[ "$slurm_present" == "true" ]]; then 
+							sbatch -J "$jobname"_"$runnum"_"$sdens" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev"_"$sdens") "$currname"
+						else
+							chmod +x $currname
+							./"$currname"
+						fi
+						
 						((runnum++))
 					fi
 					currname=job_stressstrain_eq.sh
@@ -479,8 +526,14 @@ do
 					echo "gmx editconf -f confout_avgvol.gro -scale 1.0 1.0 \"\$strain\" -o run_strain_\"\$strainnum\".gro" >> $currname
 					echo "gmx grompp -f ../enlarge.mdp -c run_strain_\"\$strainnum\".gro -p GA9rnd_gromos_ss_w_"$wt"_NPT.top -o run_strain_"$i".tpr -maxwarn 1" >> $currname
 					echo "\$MDRUN -v -deffnm run_strain_"$i"" >> $currname
-					chmod +x $currname
-					sbatch -J "$jobname"_"$runnum"_"$sdens" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev"_"$sdens") "$currname"
+					
+					if [[ "$slurm_present" == "true" ]]; then 
+						sbatch -J "$jobname"_"$runnum"_"$sdens" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev"_"$sdens") "$currname"
+					else
+						chmod +x $currname
+						./"$currname"
+					fi
+										
 					cd ..
 				done
 			done
@@ -498,11 +551,12 @@ do
 	# needs to stop the simulations.
 	runprev=$runnum
 	((runnum++)) 
-	for K in $(seq 1 1 $runnum)
-	do
-		ID=$(squeue --noheader --format %i --name "$jobname"_"$K")
-		printf "$ID \n"
-	done | awk '{printf("%s ",$1)}' > IDs_FOR_CANCELING_IF_ERROR
-
-cd $basepath
+	if [[ "$slurm_present" == "true" ]]; then
+		for K in $(seq 1 1 $runnum)
+		do
+			ID=$(squeue --noheader --format %i --name "$jobname"_"$K")
+			printf "$ID \n"
+		done | awk '{printf("%s ",$1)}' > IDs_FOR_CANCELING_IF_ERROR
+	fi
+cd $parentdir
 done
