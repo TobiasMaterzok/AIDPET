@@ -1,18 +1,15 @@
-#!/bin/bash
-
 # 
 # Author: Tobias Materzok https://github.com/TobiasMaterzok/
-# 
-# This script generates a GROMACS .gro and .top file for a given input .pdb file while considering the 
-# user-specified force field, disulfide bonds, termini, and other interactive options. It automates the 
+# Date: 2020
+#
+# This script generates a GROMACS .gro and .top file for a given input .pdb file for the GROMOS54A7
+# force field, disulfide bonds, termini, and other interactive options. It automates the 
 # process of building the molecular system for GROMACS simulations, allowing users to easily generate 
 # the necessary files for their specific system.
 # 
 # Input:
 # 
 #     pdb_input: The input protein structure in .pdb format (hardcoded as "all.pdb")
-#     force_field_name: The force field to be used, either "oplsaa" (provided as the third argument) 
-# 	or "gromos54a7" (default)
 # 
 # Output:
 # 
@@ -28,20 +25,14 @@
 # 	and ignoring hydrogen atoms.
 # 
 # Usage:
-# script.sh gro_output top_output force_field_name
+# script.sh gro_output top_output
 # 
 
 gro_output="$1"
 top_output="$2"
 pdb_input="all.pdb"
 
-# Check if force field argument is provided and set the force field accordingly
-if [[ $3 == "oplsaa" ]]
-then
-	force_field="oplsaa"
-else
-	force_field="gromos54a7"
-fi
+force_field="gromos54a7"
 
 # Run pdb2gmx to select amino acid types for non-standard residues
 yes "0" | gmx pdb2gmx -ff "$force_field" -f "$pdb_input" -o "$gro_output" -water spce -p "$top_output" -merge all -chainsep ter -lys -arg -asp -glu -gln > sel_CA.dat
