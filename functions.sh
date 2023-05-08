@@ -75,20 +75,27 @@ function awkprint2(){
 awk '{printf("%s ",$2)}'
 }
 
-function closest_value_col_val(){
-exa=$(cat $1 | awk -v c=$2 -v t=$3 'NR==1{d=$c-t;d=d<0?-d:d;v=$c;next}{m=$c-t;m=m<0?-m:m}m<d{d=m;v=$c}END{print v}')
-cat $1 | awk -v c=$2 -v c2=$4 -v e=$exa '{if($c==e) print $c2}'
-# $1 is the file to work on
-# $2 is the column to work on
-# $3 is the value which we want to find the clostest value in the array to
-# $4 is the column from which the value should be given
+
+# This function finds the closest value in a specified column to a given target value. 
+# Then, it prints the corresponding value from another specified column.
+# Arguments:
+# $1 (inputFile): The file to work on.
+# $2 (targetColumn): The column to find the closest value in (columns are counted starting with 1).
+# $3 (targetValue): The value to find the closest value to.
+# $4 (outputColumn): The column to print the corresponding value from once the closest value is found.
+#
+# Example:
+# test.xvg
 # 11.100000 36.829657 6.101642
 # 11.400000 36.402069 5.731998
 # 11.700000 35.953025 5.372652
-#closest_value_col_val test 2 36.399999 2
-# outputs: 36.402069
-#closest_value_col_val test 2 36.399999 3
-# outputs: 5.731998
+# closest_value_col_val test.xvg 2 36.399999 2
+#   outputs: 36.402069
+# closest_value_col_val test.xvg 2 36.399999 3
+#   outputs: 5.731998
+function closest_value_col_val(){
+exa=$(cat $1 | awk -v c=$2 -v t=$3 'NR==1{d=$c-t;d=d<0?-d:d;v=$c;next}{m=$c-t;m=m<0?-m:m}m<d{d=m;v=$c}END{print v}')
+cat $1 | awk -v c=$2 -v c2=$4 -v e=$exa '{if($c==e) print $c2}'
 }
 
 
