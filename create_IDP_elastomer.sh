@@ -57,7 +57,7 @@ MDRUN="gmx mdrun -ntomp 48 -ntmpi 1"
 tools=~/tools_ua_gecko
 source ~/tools_ua_gecko/functions.sh
 
-use_run_generator=true
+use_run_generators=true
 
 
 parentdir=$(pwd)
