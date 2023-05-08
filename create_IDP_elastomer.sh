@@ -51,37 +51,35 @@
 module purge
 module load intel/env/2018 intel/mpi/2018 fftw/intel/single/sse/3.3.8 gromacs/nompi/cpu/intel/single/2018.4
 
+corenum=48
 MDRUN="gmx mdrun -ntomp 48 -ntmpi 1"
- 
-basepath=$(pwd)
+
 tools=~/tools_ua_gecko
 source ~/tools_ua_gecko/functions.sh
 
 use_run_generator=true
-corenum=48
+
 
 parentdir=$(pwd)
-for L in lseq_test_707012
+for L in lseq_test_70_70_70_dens12_sample_1
 do
 	jobname="$L"
 	mkdir "$parentdir"/"$L"
 	cd "$parentdir"/"$L"
-
+	simpath=$(pwd)
 
 	# The if-else statement in this automation script checks for the success of the previous step
 	# by verifying the existence of a specific GROMACS output file (gro). If the file exists, it 
 	# assumes success and proceeds with the next simulation. If not, it cancels all submitted jobs 
 	# in the current $simpath directory, using job IDs stored in the 'X' variable, indicating the 
 	# previous step's failure.
-	simpath=$(pwd)
 
-	if [ "$use_run_generators" = true ]
+	if [[ "$use_run_generators" = "true" ]]
 	then
 		$tools/run_generators_and_concatenate_pdbs.sh MSCCPPSCATPSCPKPCCSPCCSPCGYPTGGLGSLGCCPCPCGPSSCCGSSTSARCLGITSGASVSCINQIPASCEPLRVGGYTACGGCPPCGRIC 70 70 70 1.2
 	else
 		cp ../*.pdb .
 	fi
-
 
 	numchains=$(ls -l Chain*.pdb | wc -l)
 	cp ../*mdp .
@@ -114,7 +112,7 @@ do
 	change_sbatch $currname
 	change_mdp constraints h-bonds minim_first.mdp
 	change_mdp constraints all-bonds minim.mdp
-	change_mdp nsteps 300 minim_first.mdp
+	change_mdp nsteps 500 minim_first.mdp
 	echo "cp GA9rnd_gromos.conf.gro GA9rnd_gromos_em_first.gro" >> $currname
 	echo "for i in \$(seq 5 1 20)" >> $currname
 	echo "do" >> $currname
@@ -179,13 +177,10 @@ do
 		cd nvt_cooldown_"$i"
 			steps=$(ns_to_steps 0.25 0.0005)
 			cp ../../mdp_nvt_cooldown.mdp mdp_nvt_cooldown_"$i".mdp
-			#change_mdp constraints all-bonds mdp_nvt_cooldown_"$i".mdp
 			change_mdp constraints h-bonds mdp_nvt_cooldown_"$i".mdp
 			change_mdp nsteps $steps mdp_nvt_cooldown_"$i".mdp
 			change_mdp dt 0.0005 mdp_nvt_cooldown_"$i".mdp
-			change_mdp ref-t $i mdp_nvt_cooldown_"$i".mdp
-			
-			#change_mdp tau_t 0.1 mdp_nvt_cooldown_"$i".mdp
+			change_mdp ref_t $i mdp_nvt_cooldown_"$i".mdp
 
 			change_mdp epsilon-r $(echo "$i/100*8-23" | bc) mdp_nvt_cooldown_"$i".mdp
 			change_mdp gen-vel yes mdp_nvt_cooldown_"$i".mdp
@@ -230,7 +225,6 @@ do
 			echo "\$MDRUN -deffnm run_nvt_cooldown_"$i"_NPT -v" >> $currname
 			echo "cp run_nvt_cooldown_"$i"_NPT.gro ../../run_nvt_cooldown_confout_NPT.gro" >> $currname
 			chmod +x $currname
-			#./"$currname"
 			sbatch -J "$jobname"_"$runnum" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev") "$currname"
 		cd ..
 		done
@@ -289,7 +283,6 @@ do
 		cp ../*mdp .
 
 		currname=job_sshbonds_NPT.sh
-		rm $currname
 		batch_template $currname $corenum "GROUPCUTOFF 0"
 		change_sbatch $currname
 		echo "cp ../relax_angles_NPT/GA9rnd_gromos_relaxangles_2_NPT.* ." >> $currname
@@ -299,16 +292,21 @@ do
 		echo "if [ -f GA9rnd_gromos_relaxangles_2_NPT.gro ]; then" >> $currname
 		echo "cp relax_angles_NPT/GA9rnd_gromos_relaxangles_2_NPT.* ." >> $currname
 		echo "cp GA9rnd_gromos_relaxangles_2_NPT.gro GA9rnd_gromos_relaxed_NPT.gro" >> $currname
+		
 		# Copy and modify the "create_amorph_ssbonds_lightH_modular.sh" script to create disulfide bonds in the NPT simulation
 		cp $tools/create_amorph_ssbonds_lightH_modular.sh create_amorph_ssbonds_NPT.sh
 		chmod +x create_amorph_ssbonds_NPT.sh
 		change_sbatch create_amorph_ssbonds_NPT.sh
+		
 		# Execute the disulfide bonds creation script with required arguments
 		echo "./create_amorph_ssbonds_NPT.sh GA9rnd_gromos_relaxangles_2_NPT $resnumber $sdens" >> $currname
+		
+		# Create and populate "index.ndx" file with disulfide bond information in the "ssbond" directory
 		echo "echo \"[ Link ]\" > ssbond/index.ndx" >> $currname
 		echo "cat ssbond/sel_SS_tmp.dat | awk '{printf(\"%s \",substr(\$2,5,6))}' >> ssbond/index.ndx" >> $currname
 		echo "cat ssbond/sel_SS_tmp.dat | awk '{printf(\"%s \",substr(\$5,5,6))}' >> ssbond/index.ndx" >> $currname
 		echo "echo \" \" >> ssbond/index.ndx" >> $currname
+		
 		echo "else scancel \"\$X\"; echo \"FAILED before ssbond creation\" >> ERROR; fi" >> $currname
 		chmod +x $currname
 	
@@ -327,25 +325,25 @@ do
 			runprev=$runnum
 			((runnum++))
 			currname=job_npt_relax.sh
-			rm $currname
 			batch_template $currname $corenum "GROUPCUTOFF 0"
 			change_sbatch $currname
 			cp ../relax_angles_2.mdp npt_relax_after_ss.mdp
-			steps=$(ns_to_steps 10 0.004)
+			steps=$(ns_to_steps 10 0.002)
 			change_mdp nsteps $steps npt_relax_after_ss.mdp
-			change_mdp dt 0.004 npt_relax_after_ss.mdp
+			change_mdp dt 0.002 npt_relax_after_ss.mdp
 			change_mdp constraints all-bonds npt_relax_after_ss.mdp
 			change_mdp tau_p 0.5 npt_relax_after_ss.mdp
 			change_mdp tau_t 0.1 npt_relax_after_ss.mdp
 			cp ../minim.mdp .
 			echo "periodic-molecules       = yes" >> minim.mdp
-			cp ../minim_first.mdp .
 			change_mdp constraints all-bonds minim.mdp
+			cp ../minim_first.mdp .
 			change_mdp constraints h-bonds minim_first.mdp
 			echo "periodic-molecules       = yes" >> minim_first.mdp
 			change_mdp coulombtype PME minim_first.mdp
 			change_mdp "epsilon-r" 1 minim_first.mdp
-			change_mdp nsteps 300 minim_first.mdp
+			change_mdp nsteps 3000 minim_first.mdp
+			change_mdp bonded_lambdas "0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00" minim_first.mdp
 			echo "cp ../ssbond/GA9rnd_gromos_ss.top ../GA9rnd_gromos_ss_NPT.top" >> $currname
 			echo "for i in \$(seq 5 1 20)" >> $currname
 			echo "do" >> $currname
@@ -377,9 +375,9 @@ do
 		#    This script selects a representative configuration with a volume closest to the average volume, ensuring that the 
 		#    system has experienced a sufficiently long equilibration time and is representative of the equilibrium state.
 		# 8. Submit the job with a dependency on the previous water relaxation step.
-		steps=$(ns_to_steps 75 0.004)
+		steps=$(ns_to_steps 75 0.002)
 		change_mdp nsteps $steps relax_angles_3_strong_w.mdp
-		change_mdp dt 0.004 relax_angles_3_strong_w.mdp
+		change_mdp dt 0.002 relax_angles_3_strong_w.mdp
 		change_mdp tau_p 0.5 relax_angles_3_strong_w.mdp
 		change_mdp tau_t 0.1 relax_angles_3_strong_w.mdp
 		echo "periodic-molecules       = yes" >> minim_w_insert.mdp
@@ -395,7 +393,6 @@ do
 			cd $simpath/ss_"$sdens"/npt_relax_water_NPT/npt_relax_w_"$wt"
 	
 			currname=job_npt_relax_water.sh
-			rm $currname
 			batch_template $currname $corenum "GROUPCUTOFF 0"
 			change_sbatch $currname
 	
@@ -412,7 +409,12 @@ do
 			echo "\$MDRUN -v -deffnm GA9rnd_gromos_ss_em_w" >> $currname
 			echo "gmx grompp -f ../../relax_angles_3_strong_w.mdp -c GA9rnd_gromos_ss_em_w.gro -p GA9rnd_gromos_ss_w_"$wt"_NPT.top -o GA9rnd_npt_relax_strong_w_"$wt".tpr" >> $currname
 			echo "\$MDRUN -v -deffnm GA9rnd_npt_relax_strong_w_"$wt"" >> $currname
-			echo "~/tools_ua_gecko/get_frame_average_volume.sh GA9rnd_npt_relax_strong_w_"$wt" 10" >> $currname
+			
+			nstcalcenergy=$(awk '{if($1=="nstcalcenergy"){print $3}}' ../../relax_angles_3_strong_w.mdp)
+			nstxoutcompressed=$(awk '{if($1=="nstxout-compressed"){print $3}}' ../../relax_angles_3_strong_w.mdp)
+			arg2=$(python -c "print($nstxoutcompressed//$nstcalcenergy)")
+			echo "~/tools_ua_gecko/get_frame_average_volume.sh GA9rnd_npt_relax_strong_w_"$wt" $arg2" >> $currname
+			
 			chmod +x $currname
 			sbatch -J "$jobname"_"$runnum"_"$sdens" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev_waterrelax"_"$sdens") "$currname"
 			cd $simpath/ss_"$sdens"/npt_relax_water_NPT
