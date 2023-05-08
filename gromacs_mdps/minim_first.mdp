@@ -1,0 +1,60 @@
+; minim.mdp - used as input into grompp to generate em.tpr
+; Parameters describing what to do, when to stop and what to save
+integrator	= steep		; Algorithm (steep = steepest descent minimization)
+emtol		= 50.0  	; Stop minimization when the maximum force < 1000.0 kJ/mol/nm
+emstep      = 0.01      ; Energy step size
+nsteps             = 300
+
+; Parameters describing how to find the neighbors of each atom and how to calculate the interactions
+nstlist		= 1		    ; Frequency to update the neighbor list and long range forces
+ns_type		= grid		; Method to determine neighbor list (simple, grid)
+pbc		    = xyz 		; Periodic Boundary Conditions
+
+
+cutoff-scheme           = Verlet
+rlist                   = 1.4
+;coulombtype             = PME
+coulombtype             = cut-off
+coulomb-modifier	= Potential-shift-Verlet
+rcoulomb                = 1.4 
+epsilon-r               = 80 ; lets pretend there is water and charges are screened by the surrounding water
+
+vdwtype                 = cut-off
+vdw-modifier            = Potential-shift-Verlet
+rvdw                    = 1.4
+DispCorr		= no
+
+constraints             = none
+constraint_algorithm    = lincs
+lincs-order            = 10
+lincs-iter             = 10
+
+; Free energy variables
+free_energy              = yes
+couple-moltype           = system
+couple-lambda0           = none
+couple-lambda1           = vdw-q
+couple-intramol          = yes
+init-lambda              = -1
+init_lambda_state             = 20
+delta-lambda             = 0
+nstdhdl                  = 1000
+fep-lambdas              =
+mass-lambdas             =
+coul_lambdas             = 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95 1.00
+vdw_lambdas              = 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95 1.00
+bonded_lambdas           = 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95 1.00
+restraint-lambdas        =
+temperature-lambdas      =
+calc_lambda_neighbors    = 1
+init-lambda-weights      =
+dhdl-print-energy        = no
+sc-alpha                 = 2
+sc-power                 = 2
+sc-r-power               = 6
+sc-sigma                 = 0.3
+sc-coul                  = yes
+separate-dhdl-file       = no
+dhdl-derivatives         = no
+dh_hist_size             = 0
+dh_hist_spacing          = 0.1
