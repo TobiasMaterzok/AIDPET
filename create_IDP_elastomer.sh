@@ -48,17 +48,15 @@
 #SBATCH --time=4-00:00:00
 #SBATCH --partition=batch
 
-module purge
-module load intel/env/2018 intel/mpi/2018 fftw/intel/single/sse/3.3.8 gromacs/nompi/cpu/intel/single/2018.4
-
 corenum=48
 MDRUN="gmx mdrun -ntomp 48 -ntmpi 1"
 
 tools=~/tools_ua_gecko
 source ~/tools_ua_gecko/functions.sh
 
-use_run_generators=true
+load_gromacs_2018.4
 
+use_run_generators=true
 
 parentdir=$(pwd)
 for L in lseq_test_70_70_70_dens12_sample_1
@@ -73,7 +71,6 @@ do
 	# assumes success and proceeds with the next simulation. If not, it cancels all submitted jobs 
 	# in the current $simpath directory, using job IDs stored in the 'X' variable, indicating the 
 	# previous step's failure.
-
 	if [[ "$use_run_generators" = "true" ]]
 	then
 		$tools/run_generators_and_concatenate_pdbs.sh MSCCPPSCATPSCPKPCCSPCCSPCGYPTGGLGSLGCCPCPCGPSSCCGSSTSARCLGITSGASVSCINQIPASCEPLRVGGYTACGGCPPCGRIC 70 70 70 1.2
