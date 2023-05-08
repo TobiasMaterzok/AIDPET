@@ -102,7 +102,7 @@ do
 	# We perform energy minimization with both H-bonds and all-bonds constraints. The number of steps for the first
 	# minimization is set to 300. We then loop over lambda values from 5 to 20 with a step of 1, updating the
 	# 'init_lambda_state' parameter in the 'minim_first.mdp' file for each iteration. This ensures a gradual decrease
-	# in potential energy due to the soft-core potential, reducing the chance of local minima trapping.
+	# in potential energy due to the soft-core potentials, reducing the chance of local minima trapping.
 	# We submit the job script to the scheduler using 'sbatch'
 	# and start creating a list of dependencies using the naming scheme "$jobname"_"$runnum"
 	runnum=1
@@ -129,8 +129,8 @@ do
 	# Step 2: Temperature Equilibration (Hot)
 	# The hot temperature equilibration is performed to quickly relax any unrealistic frustrations on the picosecond timescale,
 	# allowing the chains to lose any correlations to their initial conformations. This is due to the soft-core potentials and
-	# the high annealing temperature of 1300 K (RT = 11 kJ/mol). The autocorrelation function of the end-to-end vector and the
-	# radius of gyration is reduced to approximately 25 ps. We use a range of lambda values from 0.7 to 1.0 in steps of 0.1,
+	# the high annealing temperature of 1300 K (RT = 11 kJ/mol). The decay of the autocorrelation function of the end-to-end vector
+	# and the radius of gyration is reduced to approximately 25 ps. We use a range of lambda values from 0.7 to 1.0 in steps of 0.1,
 	# performing four runs of 100 ps each with a timestep of 0.4 fs. This "slow push-off" procedure is known to reduce
 	# perturbations in local chain conformations. We use a relative dielectric constant of 80 to simulate the electrostatic
 	# screening effect of water, and a Berendsen thermostat with a coupling time constant of 0.1 ps in the NVT ensemble.
@@ -371,7 +371,7 @@ do
 		# 4. Loop over water content (wt) values of 0.0 and 0.1 (without and with water).
 		# 5. Prepare the input files and perform energy minimization with water inserted.
 		# 6. Run NPT relaxation simulations.
-		# 7. Calculate the average volume of the simulation box over the last 10 ns using get_frame_average_volume.sh script. 
+		# 7. Calculate the average volume of the simulation box over the last 17% of the trajectors using get_frame_average_volume.sh. 
 		#    This script selects a representative configuration with a volume closest to the average volume, ensuring that the 
 		#    system has experienced a sufficiently long equilibration time and is representative of the equilibrium state.
 		# 8. Submit the job with a dependency on the previous water relaxation step.
