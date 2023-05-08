@@ -95,11 +95,11 @@ cp *.sh ~/tools_ua_gecko/
 cp *.py ~/tools_ua_gecko/
 ```
    
-5. You need to also download SAPGenPBC from 
+5. You need to also download the SAPGenPBC toolchain from 
 ```
 git clone https://github.com/TobiasMaterzok/PDB-Protein-Chain-Generator-in-Periodic-Boundary-Conditions
 ```
-and copy the files into ~/tools_ua_gecko/
+and copy all the files into ~/tools_ua_gecko/
 
 
 6. Create your working directory:
