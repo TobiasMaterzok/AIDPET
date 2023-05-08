@@ -111,7 +111,7 @@ mkdir -p /path/to/your/working/directory/
 7. Copy the GROMACS .mdp files into your working directory:
 
 ```
-cp * /path/to/your/working/directory/
+cp *.mdp /path/to/your/working/directory/
 ```
 
 Now you are all set to use AIDPET in your working directory.
