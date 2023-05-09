@@ -1,6 +1,6 @@
 integrator              = md
 dt                      = 0.002
-nsteps			            = 50000000
+nsteps                  = 50000000
 nstxout                 = 0
 nstvout                 = 0
 nstfout                 = 0
@@ -13,21 +13,21 @@ cutoff-scheme           = Verlet
 nstlist                 = 10
 rlist                   = 1.4
 coulombtype             = PME
-coulomb-modifier	      = Potential-shift-Verlet
+coulomb-modifier        = Potential-shift-Verlet
 rcoulomb                = 1.4
 
 vdwtype                 = cut-off
 vdw-modifier            = Potential-shift-Verlet
 rvdw                    = 1.4
-DispCorr		            = no
+DispCorr                = no
 
 tcoupl                  = v-rescale
-tc_grps			            = system
+tc_grps                 = system
 tau_t                   = 1.0
 ref_t                   = 300
 
-gen_vel			            = no
-gen_temp		            = 300
+gen_vel                 = no
+gen_temp                = 300
 
 constraints             = h-bonds
 constraint_algorithm    = lincs
