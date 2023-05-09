@@ -1,19 +1,14 @@
-; minim.mdp - used as input into grompp to generate em.tpr
-; Parameters describing what to do, when to stop and what to save
-integrator	= steep		; Algorithm (steep = steepest descent minimization)
-emtol		= 50.0  	; Stop minimization when the maximum force < 1000.0 kJ/mol/nm
-emstep      = 0.01      ; Energy step size
-nsteps             = 300
+integrator              = steep
+emtol                   = 50.0
+emstep                  = 0.01
+nsteps                  = 300
 
-; Parameters describing how to find the neighbors of each atom and how to calculate the interactions
-nstlist		= 1		    ; Frequency to update the neighbor list and long range forces
-ns_type		= grid		; Method to determine neighbor list (simple, grid)
-pbc		    = xyz 		; Periodic Boundary Conditions
-
+nstlist                 = 1
+ns_type                 = grid
+pbc                     = xyz
 
 cutoff-scheme           = Verlet
 rlist                   = 1.4
-;coulombtype             = PME
 coulombtype             = cut-off
 coulomb-modifier	= Potential-shift-Verlet
 rcoulomb                = 1.4 
@@ -22,21 +17,20 @@ epsilon-r               = 80 ; lets pretend there is water and charges are scree
 vdwtype                 = cut-off
 vdw-modifier            = Potential-shift-Verlet
 rvdw                    = 1.4
-DispCorr		= no
+DispCorr                = no
 
 constraints             = none
 constraint_algorithm    = lincs
 lincs-order            = 10
 lincs-iter             = 10
 
-; Free energy variables
 free_energy              = yes
 couple-moltype           = system
 couple-lambda0           = none
 couple-lambda1           = vdw-q
 couple-intramol          = yes
 init-lambda              = -1
-init_lambda_state             = 20
+init_lambda_state         = 20
 delta-lambda             = 0
 nstdhdl                  = 1000
 fep-lambdas              =
