@@ -14,27 +14,27 @@ nstlist                 = 10
 rlist                   = 1.4
 coulombtype             = PME
 ;coulombtype            = cut-off
-coulomb-modifier	      = Potential-shift-Verlet
+coulomb-modifier        = Potential-shift-Verlet
 rcoulomb                = 1.4 
 epsilon-r               = 80 ; lets pretend there is water and charges are screened by the surrounding water
 
 vdwtype                 = cut-off
 vdw-modifier            = Potential-shift-Verlet
 rvdw                    = 1.4
-DispCorr		            = no
+DispCorr                = no
 
 tcoupl                  = berendsen
-tc_grps			            = system
+tc_grps                 = system
 tau_t                   = 0.1
 ref_t                   = 1300
 
-gen_vel			            = yes
-gen_temp		            = 1300
+gen_vel                 = yes
+gen_temp                = 1300
 
 pcoupl                  = no
 pcoupltype              = isotropic
-tau-p                   = 1.0
-ref-p                   = 1
+tau_p                   = 1.0
+ref_p                   = 1
 compressibility         = 4.5e-5
 
 constraints             = all-bonds
