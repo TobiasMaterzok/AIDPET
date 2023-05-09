@@ -10,7 +10,7 @@ pbc                     = xyz
 cutoff-scheme           = Verlet
 rlist                   = 1.4
 coulombtype             = PME
-coulomb-modifier	      = Potential-shift-Verlet
+coulomb-modifier        = Potential-shift-Verlet
 rcoulomb                = 1.4
 epsilon-r               = 80 ; lets pretend there is water and charges are screened by the surrounding water
 
