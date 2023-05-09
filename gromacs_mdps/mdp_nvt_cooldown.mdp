@@ -19,7 +19,7 @@ epsilon-r                 = 80 ; lets pretend there is water and charges are scr
 vdwtype                 = cut-off
 vdw-modifier            = Potential-shift-Verlet
 rvdw                    = 1.4
-DispCorr		            = no
+DispCorr                = no
 
 tcoupl                   = Berendsen
 tc-grps                  = system
