@@ -12,7 +12,7 @@ cutoff-scheme             = verlet
 nstlist                   = 10
 rlist                     = 1.4
 coulombtype               = PME
-coulomb-modifier	        = Potential-shift-Verlet
+coulomb-modifier          = Potential-shift-Verlet
 rcoulomb                  = 1.4
 epsilon-r                 = 80 ; lets pretend there is water and charges are screened by the surrounding water
 
@@ -23,8 +23,8 @@ DispCorr		            = no
 
 tcoupl                   = Berendsen
 tc-grps                  = system
-tau-t                    = 1 ;tau-t with Berendsen should be at least 5*nsttcouple*dt (nsttoucuple==-1 -> nsttcouple=nslist)
-ref-t                    = ### 
+tau_t                    = 1 ;tau-t with Berendsen should be at least 5*nsttcouple*dt (nsttoucuple==-1 -> nsttcouple=nslist)
+ref_t                    = ### 
 
 gen-vel                  = yes
 gen-temp                 = 1300
@@ -32,8 +32,8 @@ gen-seed                 = -1
 
 pcoupl                   = no
 pcoupltype               = isotropic
-tau-p                    = 1.0
-ref-p                    = 1.0
+tau_p                    = 1.0
+ref_p                    = 1.0
 compressibility          = 4.5e-5
 
 constraints               = h-bonds
