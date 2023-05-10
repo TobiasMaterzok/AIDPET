@@ -113,7 +113,7 @@ do
 	rm $currname
 	batch_template $currname $corenum "GROUPCUTOFF 0" "2021 1"
 	change_sbatch $currname
-	change_mdp constraints h-bonds minim_first.mdp
+	change_mdp constraints none minim_first.mdp
 	change_mdp constraints all-bonds minim.mdp
 	change_mdp nsteps 500 minim_first.mdp
 	echo "cp GA9rnd_gromos.conf.gro GA9rnd_gromos_em_first.gro" >> $currname
