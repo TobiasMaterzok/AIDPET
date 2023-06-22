@@ -48,17 +48,27 @@ To use AIDPET, ensure the following dependencies are met:
 
 - GROMACS 2018.4 and 2021.1 installed and available in the environment. 2021.1 is only used to speed-up some relaxation steps
 
+- The python libraries are installed - Assuming the base is an Anaconda3 installation, this includes MDAnalysis and PeptideBuilder. 
+
 - If 'slurm_present' in create_IDP_elastomer.sh is set to 'true', access to a Linux HPC cluster with SLURM is needed. If 'false', the script will directly run the simulation batch scripts with './job.sh'
 
-- Directory ~/tools_ua_gecko present and populated with:
+- SAPGenPBC (https://github.com/TobiasMaterzok/PDB-Protein-Chain-Generator-in-Periodic-Boundary-Conditions) is present in 
+  ~/PDB-Protein-Chain-Generator-in-Periodic-Boundary-Conditions
+- AIDPET is in ~/AIDPET
+- The scripts from AIDPET and SAPGenPBC link to the correct directories:
   - functions.sh
-  - SAPGenPBC.py
   - concatenate_pdbs.sh
-  - run_generators_and_concatenate_pdbs.sh
-  - select_interactive_pdb2gmx_lightH.sh
   - create_amorph_ssbonds_lightH_modular.sh
-  - py_numWater.py
+  - create_gb36_disulfide_bondparameter.sh
+  - functions.sh
   - get_frame_average_volume.sh
+  - get_number_for_gmxenergy.sh
+  - run_generators_and_concatenate_pdbs.sh
+  - select_interactive_pdb2gmx_for_ssbonds_lightH.sh
+  - select_interactive_pdb2gmx_lightH.sh
+  - py_get_number_of_atomtype.py
+  - py_numWater.py
+  - SAPGenPBC.py
   
  - GROMACS .mdp files in the current working directory:
    - minim_first.mdp
@@ -73,45 +83,47 @@ To use AIDPET, ensure the following dependencies are met:
 
 ### Cloning the Repository and Setting Up
 
-1. Clone the repository to your local machine:
+1. Clone the repository to your local machine, the scripts assume this is done in the home directory:
 
 ```
+cd ~
 git clone https://github.com/TobiasMaterzok/AIDPET.git
-```
-
-2. Modify functions.sh and create_IDP_elastomer.sh to fit your HPC environment.
-
-3. Navigate to the AIDPET directory:
-
-```
 cd AIDPET
 ```
 
-4. Copy the dependency files into the ~/tools_ua_gecko directory:
+2. Set the executable flag:
 
 ```
-mkdir -p ~/tools_ua_gecko
-cp *.sh ~/tools_ua_gecko/
-cp *.py ~/tools_ua_gecko/
+chmod +x *.sh
 ```
-   
-5. You need to also download the SAPGenPBC toolchain from 
+
+3. You need to also download the SAPGenPBC toolchain from 
+
 ```
+cd ~
 git clone https://github.com/TobiasMaterzok/PDB-Protein-Chain-Generator-in-Periodic-Boundary-Conditions
+cd PDB-Protein-Chain-Generator-in-Periodic-Boundary-Conditions
+chmod +x *.sh
 ```
-and copy all the files into ~/tools_ua_gecko/
+again, assuming you are in the home directory.
 
+4. Modify functions.sh and create_IDP_elastomer.sh to fit your HPC environment.
 
-6. Create your working directory:
+```
+cd ~/AIDPET
+```
+
+5. Create your working directory:
 
 ```
 mkdir -p /path/to/your/working/directory/
 ```
 
-7. Copy the GROMACS .mdp files into your working directory:
+6. Copy the GROMACS .mdp files into your working directory:
 
 ```
-cp *.mdp /path/to/your/working/directory/
+cd ~/AIDPET
+cp gromacs_mdps/*.mdp /path/to/your/working/directory/
 ```
 
 Now you are all set to use AIDPET in your working directory.
@@ -122,7 +134,14 @@ To run AIDPET, execute the following command in your working directory:
 
 ```
 cd /path/to/your/working/directory/
-./create_IDP_elastomer.sh
+~/AIDPET/create_IDP_elastomer.sh
+```
+
+If you run with slurm you can directly run AIDPET via:
+
+```
+cd /path/to/your/working/directory/
+sbatch -J AIDPET ~/AIDPET/create_IDP_elastomer.sh
 ```
 
 This will start the automation process for a series of GROMACS molecular dynamics simulations and yield a equilibrated protein systems at 1 bar and 300 K with 33% of the cysteines involved in cross-links in 3D periodic boundary conditions with 10 weight percent water and without water present.

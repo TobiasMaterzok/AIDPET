@@ -26,9 +26,9 @@ gro_output="$1"
 top_output="$2"
 pdb_input="$3"
 
-tools=~/tools_ua_gecko
-source ~/tools_ua_gecko/functions.sh
-load_gromacs_2018.4
+tools=~/AIDPET
+source $tools/functions.sh
+load_gromacs_2018_4
 
 force_field="gromos54a7"
 

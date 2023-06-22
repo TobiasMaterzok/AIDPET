@@ -1,4 +1,11 @@
-#!/bin/bash -x
+#!/bin/sh -x
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=48
+#SBATCH --output=out.%j
+#SBATCH --error=err.%j
+#SBATCH --time=4-00:00:00
+#SBATCH --partition=batch # Please modify according to your partitions
 
 #
 # Equilibrated IDP (Protein) System Generator
@@ -20,13 +27,22 @@
 #
 # Dependencies:
 # - GROMACS 2018.4 and 2021.1 installed and available in the environment
-# - Directory ~/tools_ua_gecko present and populated with:
-# - - functions.sh
-# - - run_generators_and_concatenate_pdbs.sh
-# - - select_interactive_pdb2gmx_lightH.sh
+# - SAPGenPBC (https://github.com/TobiasMaterzok/PDB-Protein-Chain-Generator-in-Periodic-Boundary-Conditions) is present in 
+#   ~/PDB-Protein-Chain-Generator-in-Periodic-Boundary-Conditions
+# - AIDPET is in ~/AIDPET
+# - The scripts from AIDPET and SAPGenPBC link to the correct directories:
+# - - concatenate_pdbs.sh
 # - - create_amorph_ssbonds_lightH_modular.sh
-# - - py_numWater.py
+# - - create_gb36_disulfide_bondparameter.sh
+# - - functions.sh
 # - - get_frame_average_volume.sh
+# - - get_number_for_gmxenergy.sh
+# - - run_generators_and_concatenate_pdbs.sh
+# - - select_interactive_pdb2gmx_for_ssbonds_lightH.sh
+# - - select_interactive_pdb2gmx_lightH.sh
+# - - py_get_number_of_atomtype.py
+# - - py_numWater.py
+# - - SAPGenPBC.py
 # - GROMACS .mdp files in the current working directory:
 # - - minim_first.mdp
 # - - minim.mdp
@@ -43,21 +59,23 @@
 #
 
 # Adjust the 'corenum' variable and the '--cpus-per-task' parameter according to the resources available on the HPC cluster
-corenum=48
-MDRUN="gmx mdrun -ntomp 48 -ntmpi 1"
+corenum=$SLURM_CPUS_PER_TASK
+MDRUN="gmx mdrun -ntomp $corenum -ntmpi 1"
 
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=$corenum
-#SBATCH --output=out.%j
-#SBATCH --error=err.%j
-#SBATCH --time=4-00:00:00
-#SBATCH --partition=batch
+source ~/anaconda3/etc/profile.d/conda.sh
+# conda create --name role_of_seq
+# conda install -c conda-forge mdanalysis
+# pip install biopython
+# pip install PeptideBuilder
+conda activate role_of_seq
 
-tools=~/tools_ua_gecko
-source ~/tools_ua_gecko/functions.sh
+# Specify path to AIDPET
+AIDPET=~/AIDPET
+# Specify path to SAPGenPBC 
+SAPGenPBC=~/PDB-Protein-Chain-Generator-in-Periodic-Boundary-Conditions
+source $AIDPET/functions.sh
 
-load_gromacs_2018.4
+load_gromacs_2018_4
 
 use_run_generators=true
 # slurm_present: Set this variable to 'true' if on an HPC cluster with SLURM. 
@@ -65,7 +83,7 @@ use_run_generators=true
 slurm_present=true
 
 parentdir=$(pwd)
-for L in lseq_test_70_70_70_dens12_sample_1
+for L in lseq_test_70_70_70_dens12_sample_4
 do
 	jobname="$L"
 	mkdir "$parentdir"/"$L"
@@ -79,7 +97,7 @@ do
 	# previous step's failure.
 	if [[ "$use_run_generators" = "true" ]]
 	then
-		$tools/run_generators_and_concatenate_pdbs.sh MSCCPPSCATPSCPKPCCSPCCSPCGYPTGGLGSLGCCPCPCGPSSCCGSSTSARCLGITSGASVSCINQIPASCEPLRVGGYTACGGCPPCGRIC 70 70 70 1.2
+		$SAPGenPBC/run_generators_and_concatenate_pdbs.sh $corenum MSCCPPSCATPSCPKPCCSPCCSPCGYPTGGLGSLGCCPCPCGPSSCCGSSTSARCLGITSGASVSCINQIPASCEPLRVGGYTACGGCPPCGRIC 70 70 70 1.2
 	else
 		cp ../*.pdb .
 	fi
@@ -88,7 +106,7 @@ do
 	cp ../*mdp .
 
 	# Automatically generate GROMACS .gro and .top file for the current protein system using the GROMOS 54A7 force field
-	$tools/select_interactive_pdb2gmx_lightH.sh "GA9rnd_gromos.conf" "GA9rnd_top_gromos.top"
+	$AIDPET/select_interactive_pdb2gmx_lightH.sh "GA9rnd_gromos.conf" "GA9rnd_top_gromos.top"
 	cp GA9rnd_gromos.conf GA9rnd_gromos.conf_backup
 	cp GA9rnd_top_gromos.top GA9rnd_top_gromos.top_backup
 
@@ -97,6 +115,7 @@ do
 	mv Chain?.pdb Chains/
 	mv Chain??.pdb Chains/
 	mv Chain???.pdb Chains/
+
 
 	# Step 1: Energy Minimization
 	# We create and configure the job script 'job_firstpart_minim.sh' for the minimization process.
@@ -113,7 +132,7 @@ do
 	rm $currname
 	batch_template $currname $corenum "GROUPCUTOFF 0" "2021 1"
 	change_sbatch $currname
-	change_mdp constraints none minim_first.mdp
+	change_mdp constraints h-bonds minim_first.mdp #change_mdp constraints none minim_first.mdp  "NONE for samples 1-3" now h-bond for sample 4
 	change_mdp constraints all-bonds minim.mdp
 	change_mdp nsteps 500 minim_first.mdp
 	echo "cp GA9rnd_gromos.conf.gro GA9rnd_gromos_em_first.gro" >> $currname
@@ -317,7 +336,7 @@ do
 		echo "cp GA9rnd_gromos_relaxangles_2_NPT.gro GA9rnd_gromos_relaxed_NPT.gro" >> $currname
 		
 		# Copy and modify the "create_amorph_ssbonds_lightH_modular.sh" script to create disulfide bonds in the NPT simulation
-		cp $tools/create_amorph_ssbonds_lightH_modular.sh create_amorph_ssbonds_NPT.sh
+		cp $AIDPET/create_amorph_ssbonds_lightH_modular.sh create_amorph_ssbonds_NPT.sh
 		chmod +x create_amorph_ssbonds_NPT.sh
 		change_sbatch create_amorph_ssbonds_NPT.sh
 		
@@ -431,7 +450,7 @@ do
 	
 			echo "cp ../../GA9rnd_gromos_ss_NPT.top GA9rnd_gromos_ss_w_"$wt"_NPT.top" >> $currname
 			echo "cp ../../npt_relax_NPT/GA9rnd_npt_relax.gro GA9rnd_gromos_ss_w.gro" >> $currname
-			echo "numW=\$(python ~/tools_ua_gecko/py_numWater.py ../../npt_relax_NPT/GA9rnd_npt_relax.gro $wt)" >> $currname
+			echo "numW=\$(python $AIDPET/py_numWater.py ../../npt_relax_NPT/GA9rnd_npt_relax.gro $wt)" >> $currname
 	
 			echo "if (( \$numW > 0 )); then" >> $currname
 			echo "gmx insert-molecules -f ../../npt_relax_NPT/GA9rnd_npt_relax.gro -o GA9rnd_gromos_ss_w.gro -ci ~/spc.gro -nmol "\$numW" -try 30000 -scale 0.70" >> $currname
@@ -446,7 +465,7 @@ do
 			nstcalcenergy=$(awk '{if($1=="nstcalcenergy"){print $3}}' ../../relax_angles_3_strong_w.mdp)
 			nstxoutcompressed=$(awk '{if($1=="nstxout-compressed"){print $3}}' ../../relax_angles_3_strong_w.mdp)
 			arg2=$(python -c "print($nstxoutcompressed//$nstcalcenergy)")
-			echo "~/tools_ua_gecko/get_frame_average_volume.sh GA9rnd_npt_relax_strong_w_"$wt" $arg2" >> $currname
+			echo "$AIDPET/get_frame_average_volume.sh GA9rnd_npt_relax_strong_w_"$wt" $arg2" >> $currname
 			
 			if [[ "$slurm_present" == "true" ]]; then 
 				sbatch -J "$jobname"_"$runnum"_"$sdens" --dependency=$(squeue --noheader --format %i --name "$jobname"_"$runprev_waterrelax"_"$sdens") "$currname"
@@ -497,7 +516,7 @@ do
 					mkdir strain_simulation_"$i"
 					cd strain_simulation_"$i"
 	
-					if [[ $i > 0 ]];
+					if [[ $i -gt 0 ]];
 					then
 						currname=job_stressstrain_nemd.sh
 						batch_template $currname $corenum "GROUPCUTOFF 0"

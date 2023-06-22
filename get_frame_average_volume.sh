@@ -35,9 +35,9 @@
 #     volume of the last ~20% of the NPT equilibration
 #
 
-tools=~/tools_ua_gecko
-source ~/tools_ua_gecko/functions.sh
-load_gromacs_2018.4
+tools=~/AIDPET
+source $tools/functions.sh
+load_gromacs_2018_4
 
 # Set input arguments and load necessary modules
 deffnm=$1

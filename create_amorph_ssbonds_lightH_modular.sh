@@ -25,9 +25,9 @@ num_atoms_in_chain=$2
 percentage_ssdensity=$3
 lastatomAfterGMXTrjconv=O2
 naic=$num_atoms_in_chain
-tools=~/tools_ua_gecko
-source ~/tools_ua_gecko/functions.sh
-load_gromacs_2018.4
+tools=~/AIDPET
+source $tools/functions.sh
+load_gromacs_2018_4
 
 
 force_field=gromos54a7

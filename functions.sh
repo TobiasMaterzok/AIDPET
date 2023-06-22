@@ -6,13 +6,13 @@
 # A small bash script that combines useful functions for daily usage on a HPC Cluster
 #
 
-tools=~/tools_ua_gecko
+tools=~/AIDPET
 
-function load_gromacs_2018.4(){
+function load_gromacs_2018_4(){
     module purge && module load intel/env/2018 fftw/intel/single/sse/3.3.8 gromacs/nompi/cpu/intel/single/2018.4
 }
 
-function load_gromacs_2021.1(){
+function load_gromacs_2021_1(){
     module purge && module load gcc/10.3.0 fftw/gcc/single/sse/3.3.9 gromacs/nompi/cpu/gcc/single/2021.1
 }
 
@@ -66,7 +66,6 @@ function ns_to_steps(){
 python -c "print(int($1*1000/$2))"
 }
 
-
 function awkprint1(){
 awk '{printf("%s ",$1)}'
 }
@@ -74,7 +73,6 @@ awk '{printf("%s ",$1)}'
 function awkprint2(){
 awk '{printf("%s ",$2)}'
 }
-
 
 # This function finds the closest value in a specified column to a given target value. 
 # Then, it prints the corresponding value from another specified column.
