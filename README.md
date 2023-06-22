@@ -122,8 +122,14 @@ mkdir -p /path/to/your/working/directory/
 6. Copy the GROMACS .mdp files into your working directory:
 
 ```
-cd ~/AIDPET
 cp gromacs_mdps/*.mdp /path/to/your/working/directory/
+```
+
+8. Make the scripts executable:
+
+```
+chmod +x ~/AIDPET/*.sh
+chmod +x create_IDP_elastomer.sh
 ```
 
 Now you are all set to use AIDPET in your working directory.
@@ -134,14 +140,14 @@ To run AIDPET, execute the following command in your working directory:
 
 ```
 cd /path/to/your/working/directory/
-~/AIDPET/create_IDP_elastomer.sh
+~/tools_ua_gecko/create_IDP_elastomer.sh
 ```
 
 If you run with slurm you can directly run AIDPET via:
 
 ```
 cd /path/to/your/working/directory/
-sbatch -J AIDPET ~/AIDPET/create_IDP_elastomer.sh
+sbatch -J AIDPET ~/tools_ua_gecko/create_IDP_elastomer.sh
 ```
 
 This will start the automation process for a series of GROMACS molecular dynamics simulations and yield a equilibrated protein systems at 1 bar and 300 K with 33% of the cysteines involved in cross-links in 3D periodic boundary conditions with 10 weight percent water and without water present.
