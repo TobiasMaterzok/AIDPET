@@ -27,7 +27,7 @@ top_output="$2"
 pdb_input="$3"
 
 tools=~/AIDPET
-source $tools/functions.sh
+. $tools/functions.sh
 load_gromacs_2018_4
 
 force_field="gromos54a7"
@@ -35,7 +35,7 @@ force_field="gromos54a7"
 # Run pdb2gmx to select amino acid types for non-standard residues
 yes "0" | gmx pdb2gmx -ff "$force_field" -f "$pdb_input" -o "$gro_output" -water spce -p "$top_output" -merge all -chainsep ter -lys -arg -asp -glu -gln > sel_CA.dat
 sel_CA=$(cat sel_CA.dat | grep "charge 0" | awk '{printf("%s\\n",substr($1,1,1))}')
-rm "$gro_output".gro sel_CA.dat "$top_output".top posre.tip
+rm "$gro_output".gro "$top_output".top posre.tip
 
 # Run pdb2gmx to identify disulfide bonds
 gmx pdb2gmx -ff "$force_field" -f "$pdb_input" -o "$gro_output" -merge all -water spc -chainsep ter -ignh 2> sel_SS.dat
@@ -48,7 +48,7 @@ rm "$gro_output".gro sel_SS.dat "$top_output".top posre.tip
 # Run pdb2gmx to select termini types
 yes "0" | gmx pdb2gmx -ff "$force_field" -f "$pdb_input" -o "$gro_output" -water spce -p "$top_output" -merge all -chainsep ter -ter 1> sel_termini.dat
 sel_termini=$(cat sel_termini.dat | grep Select | awk '{printf("0\\n")}')
-rm "$gro_output".gro sel_termini.dat "$top_output".top posre.tip
+rm "$gro_output".gro "$top_output".top posre.tip
 
 # Combine the selections and rerun pdb2gmx with interactive options
 str="$sel_CA""$sel_SS""$sel_termini"

@@ -28,8 +28,8 @@
 # script.sh gro_output top_output
 # 
 
-tools=~/tools_ua_gecko
-source ~/tools_ua_gecko/functions.sh
+tools=~/AIDPET
+. $tools/functions.sh
 load_gromacs_2018_4
 
 gro_output="$1"

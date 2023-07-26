@@ -26,7 +26,7 @@ percentage_ssdensity=$3
 lastatomAfterGMXTrjconv=O2
 naic=$num_atoms_in_chain
 tools=~/AIDPET
-source $tools/functions.sh
+. $tools/functions.sh
 load_gromacs_2018_4
 
 
@@ -34,7 +34,7 @@ force_field=gromos54a7
 
 # Create a new directory for ssbond and move to the parent directory
 mkdir ssbond
-cd ssbond 
+cd ssbond || exit
 cd ..
 # Extract the last frame from the trajectory without hydrogen atoms
 echo "0 " | gmx trjconv -f "$deffnm".xtc -s "$deffnm".tpr -o tmp.gro -dump 10000000000 2> lastframe
@@ -43,7 +43,7 @@ echo "2 " | gmx trjconv -f "$deffnm".xtc -s "$deffnm".tpr -o confout_pureP.pdb -
 echo "2 " | gmx trjconv -f "$deffnm".xtc -s "$deffnm".tpr -o tmp.gro -dump $lastframe  # it needs to be without H atoms.. so output only Protein-H
 
 # Move to the ssbond directory and copy the required files
-cd ssbond
+cd ssbond || exit
 cp ../confout_pureP.pdb .
 mv ../tmp.gro .
 
@@ -84,7 +84,7 @@ do
 	n=$(echo "($cutoff-$mindist)/0.01" | bc -l)
 	N=$(echo "($n/1) + 1" | bc)
 	echo "$N" > specbond.dat
-	for i in `seq $mindist 0.01 $cutoff`
+	for i in $(seq $mindist 0.01 $cutoff)
 	do
 		echo "CYS     SG      1       CYS     SG      1       $i     CYS2    CYS2" >> specbond.dat
 	done

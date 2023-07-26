@@ -36,12 +36,12 @@
 #
 
 tools=~/AIDPET
-source $tools/functions.sh
+. $tools/functions.sh
 load_gromacs_2018_4
 
 # Set input arguments and load necessary modules
 deffnm=$1
-trjoutinterval_by_energyoutinterval=$2 #nstxout-compressed / nstcalcenergy = 10
+trjoutinterval_by_energyoutinterval=$2 # nstxout-compressed / nstcalcenergy = 10
 tbe=$trjoutinterval_by_energyoutinterval
 
 # Extract volume information from the .edr file

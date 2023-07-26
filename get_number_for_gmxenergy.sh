@@ -12,7 +12,7 @@
 energy_file_path=$1
 energy_term=$2
 
-source ~/AIDPET/functions.sh
+. ~/AIDPET/functions.sh
 load_gromacs_2018_4
 
 # Run the gmx energy command and create temporary files for output and error streams
