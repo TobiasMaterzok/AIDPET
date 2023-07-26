@@ -83,11 +83,14 @@ use_run_generators=true
 slurm_present="true" # We check POSIX compliant variable - so either "true" or "false"
 
 parentdir=$(pwd)
-for L in lseq_0_sample_4 # lseq_0_sample_2 lseq_0_sample_3
+for L in lseq_0_sample_1_newrndwalk lseq_0_sample_2_newrndwalk lseq_0_sample_3_newrndwalk
 do
 	jobname="$L"
 	mkdir "$parentdir"/"$L"
 	cd "$parentdir"/"$L" || exit
+
+	cp $AIDPET/create_IDP_elastomer.sh . # As kind of free documentation
+
 	simpath=$(pwd)
 
 	# The if-else statement in this automation script checks for the success of the previous step
@@ -96,7 +99,7 @@ do
 	# in the current $simpath directory, using job IDs stored in the 'X' variable, indicating the 
 	# previous step's failure.
 	if [ "$slurm_present" = "true" ]; then
-		$SAPGenPBC/run_generators_and_concatenate_pdbs.sh "$corenum" MSCCPPSCATPSCPKPCCSPCCSPCGYPTGGLGSLGCCPCPCGPSSCCGSSTSARCLGITSGASVSCINQIPASCEPLRVGGYTACGGCPPCGRIC 70 70 70 1.2
+		$SAPGenPBC/run_generators_and_concatenate_pdbs.sh "$corenum" MSCCPPSCATPSCPKPCCSPCCSPCGYPTGGLGSLGCCPCPCGPSSCCGSSTSARCLGITSGASVSCINQIPASCEPLRVGGYTACGGCPPCGRIC 70 70 70 1.20
 	else
 		cp ../*.pdb .
 	fi
@@ -105,8 +108,8 @@ do
 	cp ../*mdp .
 
 	# Automatically generate GROMACS .gro and .top file for the current protein system using the GROMOS 54A7 force field
-	$AIDPET/select_interactive_pdb2gmx_lightH.sh "GA9rnd_gromos.conf" "GA9rnd_top_gromos.top"
-	cp GA9rnd_gromos.conf GA9rnd_gromos.conf_backup
+	$AIDPET/select_interactive_pdb2gmx_lightH.sh "GA9rnd_gromos.conf.gro" "GA9rnd_top_gromos.top"
+	cp GA9rnd_gromos.conf.gro GA9rnd_gromos.conf_backup
 	cp GA9rnd_top_gromos.top GA9rnd_top_gromos.top_backup
 
 	cp Chain1.pdb Chainreference.pdb
@@ -131,13 +134,13 @@ do
 	rm $currname
 	batch_template $currname $corenum "GROUPCUTOFF 0" "2021 1"
 	change_sbatch $currname
-	change_mdp constraints h-bonds minim_first.mdp #change_mdp constraints none minim_first.mdp  "NONE for samples 1-3" now h-bond for sample 4
+	change_mdp constraints h-bonds minim_first.mdp
 	change_mdp constraints all-bonds minim.mdp
-	change_mdp nsteps 5000 minim_first.mdp
+	change_mdp nsteps 1000 minim_first.mdp
 	
 	cat <<-EOF >> $currname
 	cp GA9rnd_gromos.conf.gro GA9rnd_gromos_em_first.gro
-	for i in \$(seq 5 1 20)
+	for i in \$(seq 10 1 20)
 	do
 	change_mdp init_lambda_state \$i minim_first.mdp
 	gmx grompp -f minim_first.mdp -c GA9rnd_gromos_em_first.gro -p GA9rnd_top_gromos.top -o GA9rnd_gromos_em_first.tpr -maxwarn 1
@@ -150,17 +153,6 @@ do
 	gmx grompp -f minim.mdp -c GA9rnd_gromos_em_first.gro -p GA9rnd_top_gromos.top -o GA9rnd_gromos_em.tpr -maxwarn 1
 	\$MDRUN -v -deffnm GA9rnd_gromos_em
 	EOF
-
-	#echo "cp GA9rnd_gromos.conf.gro GA9rnd_gromos_em_first.gro" >> $currname
-	#echo "for i in \$(seq 5 1 20)" >> $currname
-	#echo "do" >> $currname
-	#echo "change_mdp init_lambda_state \$i minim_first.mdp"  >> $currname
-	#echo "gmx grompp -f minim_first.mdp -c GA9rnd_gromos_em_first.gro -p GA9rnd_top_gromos.top -o GA9rnd_gromos_em_first.tpr -maxwarn 1" >> $currname
-	#echo "\$MDRUN -v -deffnm GA9rnd_gromos_em_first" >> $currname
-	#echo "rm \#*" >> $currname
-	#echo "done" >> $currname
-	#echo "gmx grompp -f minim.mdp -c GA9rnd_gromos_em_first -p GA9rnd_top_gromos.top -o GA9rnd_gromos_em.tpr -maxwarn 1" >> $currname
-	#echo "\$MDRUN -v -deffnm GA9rnd_gromos_em" >> $currname
 	
 	if [ "$slurm_present" = "true" ]; then
 		sbatch -J "$jobname"_"$runnum" "$currname"
@@ -191,7 +183,7 @@ do
 		for i in \$(seq 14 2 20)
 		do
 		change_mdp init_lambda_state \$i nvt_hot.mdp
-		time=0.25
+		time=0.1
 		dt=0.0004
 		steps=\$(ns_to_steps \$time \$dt)
 		change_mdp nsteps \$steps nvt_hot.mdp
@@ -203,7 +195,7 @@ do
 		cp GA9rnd_gromos_hot.edr GA9rnd_gromos_hot_l\$i.edr && rm GA9rnd_gromos_hot.edr
 		done
 		X=\$(cat ../IDs_FOR_CANCELING_IF_ERROR)
-		if [ -f GA9rnd_gromos_hot.gro ]; then echo YO; else scancel \"\$X\"; echo \"FAILED at Energy minimization\" >> ../ERROR; fi
+		if [ -f GA9rnd_gromos_hot.gro ]; then echo YO; else scancel "\$X"; echo "FAILED at Energy minimization" >> ../ERROR; fi
 		EOF
 
 		if [ "$slurm_present" = "true" ]; then
@@ -227,7 +219,7 @@ do
 		do
 		mkdir nvt_cooldown_"$i"
 		cd nvt_cooldown_"$i" || exit
-			steps=$(ns_to_steps 0.35 0.0005)
+			steps=$(ns_to_steps 0.25 0.0005)
 			cp ../../mdp_nvt_cooldown.mdp mdp_nvt_cooldown_"$i".mdp
 			change_mdp constraints h-bonds mdp_nvt_cooldown_"$i".mdp
 			change_mdp nsteps "$steps" mdp_nvt_cooldown_"$i".mdp
@@ -250,7 +242,7 @@ do
 				change_mdp dt 0.0006 mdp_nvt_cooldown_"$i".mdp
 			fi
 			if [ $i -lt 700 ]; then
-				steps=$(ns_to_steps 0.3 0.001)
+				steps=$(ns_to_steps 0.30 0.001)
 				change_mdp nsteps $steps mdp_nvt_cooldown_"$i".mdp
 				change_mdp dt 0.001 mdp_nvt_cooldown_"$i".mdp
 			fi
@@ -307,7 +299,7 @@ do
 		batch_template $currname $corenum "GROUPCUTOFF 0"
 		change_sbatch $currname
 		cp ../relax_angles_2.mdp relax_angles.mdp
-		steps=$(ns_to_steps 12.5 0.002)
+		steps=$(ns_to_steps 12 0.002)
 		change_mdp nsteps $steps relax_angles.mdp
 		change_mdp dt 0.002 relax_angles.mdp
 		change_mdp constraints all-bonds relax_angles.mdp
@@ -370,11 +362,11 @@ do
 		cp relax_angles_NPT/GA9rnd_gromos_relaxangles_2_NPT.* .
 		cp GA9rnd_gromos_relaxangles_2_NPT.gro GA9rnd_gromos_relaxed_NPT.gro
 		./create_amorph_ssbonds_NPT.sh GA9rnd_gromos_relaxangles_2_NPT $resnumber $sdens
-		echo \"[ Link ]\" > ssbond/index.ndx
-		cat ssbond/sel_SS_tmp.dat | awk '{printf(\"%s \",substr(\$2,5,6))}' >> ssbond/index.ndx
-		cat ssbond/sel_SS_tmp.dat | awk '{printf(\"%s \",substr(\$5,5,6))}' >> ssbond/index.ndx
-		echo \" \" >> ssbond/index.ndx
-		else scancel \"\$X\"; echo \"FAILED before ssbond creation\" >> ERROR; fi
+		echo "[ Link ]" > ssbond/index.ndx
+		cat ssbond/sel_SS_tmp.dat | awk '{printf("%s ",substr(\$2,5,6))}' >> ssbond/index.ndx
+		cat ssbond/sel_SS_tmp.dat | awk '{printf("%s ",substr(\$5,5,6))}' >> ssbond/index.ndx
+		echo " " >> ssbond/index.ndx
+		else scancel "\$X"; echo "FAILED before ssbond creation" >> ERROR; fi
 		EOF
 		# Execute ssbond creation create_amorph_ssbonds_NPT.sh
 		# Create and populate "index.ndx" file with disulfide bond information in the "ssbond" directory
@@ -402,7 +394,7 @@ do
 			batch_template $currname "$corenum" "GROUPCUTOFF 0"
 			change_sbatch $currname
 			cp ../relax_angles_2.mdp npt_relax_after_ss.mdp
-			steps=$(ns_to_steps 12.5 0.002)
+			steps=$(ns_to_steps 12 0.002)
 			change_mdp nsteps "$steps" npt_relax_after_ss.mdp
 			change_mdp dt 0.002 npt_relax_after_ss.mdp
 			change_mdp constraints all-bonds npt_relax_after_ss.mdp
@@ -416,22 +408,24 @@ do
 			echo "periodic-molecules       = yes" >> minim_first.mdp
 			change_mdp coulombtype PME minim_first.mdp
 			change_mdp "epsilon-r" 1 minim_first.mdp
-			change_mdp nsteps 3000 minim_first.mdp
+			change_mdp nsteps 5000 minim_first.mdp
 			change_mdp bonded_lambdas "0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00" minim_first.mdp
-
+			
 			cat <<-EOF >> $currname
 			cp ../ssbond/GA9rnd_gromos_ss.top ../GA9rnd_gromos_ss_NPT.top
-			for i in \$(seq 5 1 20)
+			for i in \$(seq 18 1 20)
 			do
 			change_mdp init_lambda_state \$i minim_first.mdp
 			gmx grompp -f minim_first.mdp -c ../ssbond/GA9rnd_gromos_ss.gro -p ../GA9rnd_gromos_ss_NPT.top -o GA9rnd_gromos_ss_em_first.tpr -maxwarn 1
 			\$MDRUN -v -deffnm GA9rnd_gromos_ss_em_first
 			sleep 10
-			cp GA9rnd_gromos_ss_em_first.edr GA9rnd_gromos_ss_em_first_l\$i.edr && rm GA9rnd_gromos_ss_em_first.edr
-			done
+			cp GA9rnd_gromos_ss_em_first.edr GA9rnd_gromos_ss_em_first_l20.edr && rm GA9rnd_gromos_ss_em_first.edr
+			cp GA9rnd_gromos_ss_em_first.gro GA9rnd_gromos_ss_em_first_l20.gro
 			rm \#*
+			done
 			gmx grompp -f minim.mdp -c GA9rnd_gromos_ss_em_first.gro -p ../GA9rnd_gromos_ss_NPT.top -o GA9rnd_gromos_ss_em.tpr -maxwarn 1
 			\$MDRUN -v -deffnm GA9rnd_gromos_ss_em
+			sleep 10
 			gmx grompp -f npt_relax_after_ss.mdp -c GA9rnd_gromos_ss_em.gro -p ../GA9rnd_gromos_ss_NPT.top -o GA9rnd_npt_relax.tpr -maxwarn 1
 			\$MDRUN -v -deffnm GA9rnd_npt_relax
 			EOF
@@ -604,11 +598,14 @@ do
 	runprev=$runnum
 	runnum=$((runnum+1))
 	if [ "$slurm_present" = "true" ]; then
-		for K in $(seq 1 1 $runnum)
-		do
-			ID=$(squeue --noheader --format %i --name "$jobname"_"$K")
-			printf "$ID \n"
-		done | awk '{printf("%s ",$1)}' > IDs_FOR_CANCELING_IF_ERROR
+
+		squeue --format " %7i %75j" | grep $jobname | awk '{printf("%s ", $1)}' > IDs_FOR_CANCELING_IF_ERROR
+
+		#for K in $(seq 1 1 $runnum)
+		#do
+		#	ID=$(squeue --noheader --format %i --name "$jobname"_"$K")
+		#	printf "$ID \n"
+		#done | awk '{printf("%s ",$1)}' > IDs_FOR_CANCELING_IF_ERROR
 	fi
 cd "$parentdir" || exit
 done

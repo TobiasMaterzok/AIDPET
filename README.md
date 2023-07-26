@@ -125,13 +125,6 @@ mkdir -p /path/to/your/working/directory/
 cp gromacs_mdps/*.mdp /path/to/your/working/directory/
 ```
 
-8. Make the scripts executable:
-
-```
-chmod +x ~/AIDPET/*.sh
-chmod +x ~/PDB-Protein-Chain-Generator-in-Periodic-Boundary-Conditions/*.sh
-```
-
 Now you are all set to use AIDPET in your working directory.
 
 ## Usage
