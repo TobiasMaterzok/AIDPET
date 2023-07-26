@@ -10,7 +10,7 @@ pbc                     = xyz
 cutoff-scheme           = Verlet
 rlist                   = 1.4
 coulombtype             = cut-off
-coulomb-modifier	= Potential-shift-Verlet
+coulomb-modifier	    = Potential-shift-Verlet
 rcoulomb                = 1.4 
 epsilon-r               = 80 ; lets pretend there is water and charges are screened by the surrounding water
 
@@ -21,8 +21,8 @@ DispCorr                = no
 
 constraints             = none
 constraint_algorithm    = lincs
-lincs-order            = 10
-lincs-iter             = 10
+lincs-order             = 10
+lincs-iter              = 10
 
 free_energy              = yes
 couple-moltype           = system
@@ -30,7 +30,7 @@ couple-lambda0           = none
 couple-lambda1           = vdw-q
 couple-intramol          = yes
 init-lambda              = -1
-init_lambda_state         = 20
+init_lambda_state        = 20
 delta-lambda             = 0
 nstdhdl                  = 1000
 fep-lambdas              =
